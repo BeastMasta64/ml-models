@@ -35,3 +35,10 @@ class RegressionModel():
         predicted = model.predict(X)
         result = mean_absolute_error(y, predicted)
         return result
+
+def main():
+    do_something()
+
+if __name__ == '__main__':
+    model = RegressionModel()
+    model.start_predictions(model_id)
