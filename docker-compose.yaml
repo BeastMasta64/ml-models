@@ -1,12 +1,20 @@
 version: '3'
 
-volumes:
-  db:
-
 services:
 
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
   db:
-    build: ./database
+    #build: ./database
+    image: superprog/ml-database:v1
     container_name: db
     restart: always
     env_file: 
@@ -14,6 +22,7 @@ services:
 
   fastapi:
     build: ./src
+    #image: superprog/ml-fastapi:v1
     container_name: fastapi
     restart: always
     env_file: 
@@ -23,3 +32,20 @@ services:
       - '8000:8000'
     depends_on:
       - db
+      - rabbitmq
+
+  db_results:
+    build: ./db_result
+    #image: superprog/
+    container_name: db_results
+    restart: always
+
+  runner:
+    build: ./runner
+    #image: superprog/
+    container_name: runner
+    restart: always
+    depends_on:
+      - db_results
+      - fastapi
+      - rabbitmq

@@ -39,7 +39,7 @@ async def read_model(
 
 
 @router.post('/', response_model=GetModel, status_code=status.HTTP_201_CREATED)
-async def create_entity(
+async def create_model(
     model_in: CreateModel,
     db: AsyncSession = Depends(get_session)
 ) -> Any:
@@ -50,8 +50,8 @@ async def create_entity(
     return model
 
 
-@router.put("/{id}", response_model=GetModel, status_code=status.HTTP_200_OK)
-async def update_entity(
+@router.put('/{id}', response_model=GetModel, status_code=status.HTTP_200_OK)
+async def update_model(
     id: int,
     model_in: CreateModel,
     db: AsyncSession = Depends(get_session),
@@ -65,3 +65,16 @@ async def update_entity(
             status_code=status.HTTP_404_NOT_FOUND, detail='Модель не найдена'
         )
     return model
+
+
+@router.delete('/{id}',
+               response_model=None,
+               status_code=status.HTTP_204_NO_CONTENT)
+async def delete_model(
+    id: int,
+    db: AsyncSession = Depends(get_session),
+) -> Any:
+    """
+    Удаление модели по ID.
+    """
+    await model_crud.delete(db=db, id=id)

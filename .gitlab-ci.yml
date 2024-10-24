@@ -1,0 +1,48 @@
+stages:         
+  - test
+  - build
+  - deploy
+
+lint-test-job:   
+  stage: test    
+  image: python:3.9-slim-buster
+  script:
+    - python -m pip install --upgrade pip 
+    - pip install flake8
+    - python -m flake8
+
+build-job:
+  stage: build
+  image: docker:latest 
+  script:
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+    - docker build -t $DOCKERHUB_USER/ml-fastapi:v1 ./src
+    - docker build -t $DOCKERHUB_USER/ml-database:v1 ./database
+    - docker push $DOCKERHUB_USER/ml-fastapi:v1
+    - docker push $DOCKERHUB_USER/ml-database:v1
+  only:
+    - main
+
+deploy-job:
+  stage: deploy
+  image: docker:latest
+  before_script:
+    - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+
+    - chmod 400 "$SSH_P_KEY"
+    - ssh-add "$SSH_P_KEY"
+
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+  script:
+    - ssh $VM_LOGIN@$HOST 'sudo docker stop fastapi db'
+    - ssh $VM_LOGIN@$HOST 'sudo docker rm fastapi db'
+
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+    - ssh $VM_LOGIN@$HOST 'sudo docker pull superprog/ml-fastapi:v1'
+    - ssh $VM_LOGIN@$HOST 'sudo docker pull superprog/ml-database:v1'
+    - ssh $VM_LOGIN@$HOST 'sudo docker compose up -d --build'
+  only:
+    - main

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 
 from db.db import AsyncSession
 from models.base import Base
@@ -61,6 +61,15 @@ class Model_CRUD():
 
         results = await db.execute(select(Model).where(Model.id == id))
         return results.scalar_one_or_none()
+
+    async def delete(
+        self,
+        id: int,
+        db: AsyncSession,
+    ) -> ModelType:
+        """Метод для удаления объекта модели по ID."""
+        await db.execute(delete(Model).where(Model.id == id))
+        await db.commit()
 
 
 model_crud = Model_CRUD()
